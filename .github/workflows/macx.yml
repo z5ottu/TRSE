@@ -8,7 +8,7 @@ on:
   
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -47,13 +47,14 @@ jobs:
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
         run: |
           echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security create-keychain -p hurra build.keychain 
-          security default-keychain -s build.keychain
-          security unlock-keychain -p hurra build.keychain
-          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k hurra build.keychain
-          security find-identity -v
-          cd Publish/publish_mac && ./publish_mac.sh nightly $DEVELOPER_ID
+          # security create-keychain -p hurra build.keychain 
+          # security default-keychain -s build.keychain
+          # security unlock-keychain -p hurra build.keychain
+          # security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k hurra build.keychain
+          # security find-identity -v
+          # cd Publish/publish_mac && ./publish_mac.sh nightly $DEVELOPER_ID
+          cd Publish/publish_mac && ./publish_mac.sh nightly
       - uses: softprops/action-gh-release@v2
         with:
           name: nightly
@@ -62,12 +63,3 @@ jobs:
           prerelease: false
           make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build notification
-        if: failure()
-        uses: adamkdean/simple-slack-notify@master
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          channel: #bugs
-          text: "[GitHub Actions Notification] MacOS build failed: ${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}"
