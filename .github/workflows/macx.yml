@@ -8,7 +8,7 @@ on:
   
 jobs:
   build:
-    runs-on: macos-15-intel
+    runs-on: macos-14-large
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +20,7 @@ jobs:
       - name: Increment version
         id: version
         run: |
+          sysctl -a | grep brand
           version=$(grep "define NIGHTLY" source/LeLib/data.cpp | awk '{ print $3 }')
           let version=${version}+1
           # Mac uses BSD sed where -i takes a parameter (an extension for the
