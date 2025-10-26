@@ -52,6 +52,8 @@ jobs:
             echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
             export LDFLAGS=-L/usr/local/opt/libomp/lib
             export CPPFLAGS=-I/usr/local/opt/libomp/include
+            cp /usr/local/opt/libomp/include/* source/trsedocuments/
+            cp /usr/local/opt/libomp/lib/* source/trsedocuments/
           else
             echo "Error: libomp not found in expected locations"
             exit 1
