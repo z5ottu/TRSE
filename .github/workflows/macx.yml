@@ -38,6 +38,11 @@ jobs:
           arch: 'clang_64'      
       - run: brew install libomp
 
+      - name: Set OpenMP environment variables
+        run: |
+          echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
+
       - run: qmake TRSE.pro
       - run: make -j 4
 
