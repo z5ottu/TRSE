@@ -38,15 +38,24 @@ jobs:
           arch: 'clang_64'      
       - run: brew install libomp
 
-      - name: Configure OpenMP paths
+      - name: Configure for Intel Mac build
         run: |
-          # Add both Intel and ARM paths to TRSE.pro for compatibility
+          # macos-13 runner is x86_64 (Intel), not ARM64
+          # Change architecture from arm64 to x86_64
+          sed -i '' 's|QMAKE_APPLE_DEVICE_ARCHS = arm64|QMAKE_APPLE_DEVICE_ARCHS = x86_64|g' TRSE.pro
+          
+          # Use Intel library paths and x86 Lua library
+          sed -i '' 's|LIBS += -L\$\$PWD/libs/lua/ -lluamac_arm|LIBS += -L\$\$PWD/libs/lua/ -lluamac|g' TRSE.pro
+          
+          # Add Intel OpenMP paths
           sed -i '' 's|QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -I/usr/local/include|QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -I/usr/local/include -I/usr/local/opt/libomp/include|g' TRSE.pro
-          sed -i '' 's|LIBS+= -L/opt/homebrew/opt/libomp/lib|LIBS+= -L/opt/homebrew/opt/libomp/lib -L/usr/local/opt/libomp/lib|g' TRSE.pro
-          sed -i '' 's|QMAKE_CXXFLAGS+= -I/opt/homebrew/opt/libomp/include|QMAKE_CXXFLAGS+= -I/opt/homebrew/opt/libomp/include -I/usr/local/opt/libomp/include|g' TRSE.pro
+          sed -i '' 's|LIBS+= -L/opt/homebrew/opt/libomp/lib|LIBS+= -L/usr/local/opt/libomp/lib -L/opt/homebrew/opt/libomp/lib|g' TRSE.pro
+          sed -i '' 's|QMAKE_CXXFLAGS+= -I/opt/homebrew/opt/libomp/include|QMAKE_CXXFLAGS+= -I/usr/local/opt/libomp/include -I/opt/homebrew/opt/libomp/include|g' TRSE.pro
+          
+          cat TRSE.pro | grep -A 20 "macx{"
           
       - run: qmake TRSE.pro
-      - run: make -j 4
+      - run: make -j 8
 
       - name: Package application
         run: cd Publish/publish_mac && ./publish_mac.sh nightly
@@ -57,4 +66,4 @@ jobs:
           files: Publish/publish_mac/trse_osx.tar.gz
           prerelease: false
           make_latest: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TOKEN }}
