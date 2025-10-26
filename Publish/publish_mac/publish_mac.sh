@@ -19,8 +19,8 @@ cp -r ../project_templates trse/trse.app/
 cd trse/trse.app
 if [ "$1" = "nightly" ]
 then
-    echo "nada"
-    macdeployqt . -codesign="$2"
+    echo "Skipping codesign for nightly build"
+    macdeployqt .
 else
   rm *.ini
   ~/Qt/6.7.2/macos/bin/macdeployqt . -codesign="$1"

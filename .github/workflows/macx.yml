@@ -38,45 +38,18 @@ jobs:
           arch: 'clang_64'      
       - run: brew install libomp
 
-      - run: |
-          # Check which architecture we're on and set the correct paths
-          if [ -d "/opt/homebrew/opt/libomp" ]; then
-            # ARM64 Mac (Apple Silicon)
-            echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
-            echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
-            export LDFLAGS=-L/opt/homebrew/opt/libomp/lib
-            export CPPFLAGS=-I/opt/homebrew/opt/libomp/include
-          elif [ -d "/usr/local/opt/libomp" ]; then
-            # x86_64 Mac (Intel)
-            echo "LDFLAGS=-L/usr/local/opt/libomp/lib" >> $GITHUB_ENV
-            echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
-            export LDFLAGS=-L/usr/local/opt/libomp/lib
-            export CPPFLAGS=-I/usr/local/opt/libomp/include
-            cp /usr/local/opt/libomp/include/* source/trsedocuments/
-            cp /usr/local/opt/libomp/lib/* source/trsedocuments/
-          else
-            echo "Error: libomp not found in expected locations"
-            exit 1
-          fi
-          export
-          qmake TRSE.pro
-          make -j 4
-
-      - name: Codesign executable
-        env: 
-          DEVELOPER_ID: ${{ secrets.DEVELOPER_ID }}
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+      - name: Configure OpenMP paths
         run: |
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          # security create-keychain -p hurra build.keychain 
-          # security default-keychain -s build.keychain
-          # security unlock-keychain -p hurra build.keychain
-          # security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k hurra build.keychain
-          # security find-identity -v
-          # cd Publish/publish_mac && ./publish_mac.sh nightly $DEVELOPER_ID
-          cd Publish/publish_mac && ./publish_mac.sh nightly
+          # Add both Intel and ARM paths to TRSE.pro for compatibility
+          sed -i '' 's|QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -I/usr/local/include|QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -I/usr/local/include -I/usr/local/opt/libomp/include|g' TRSE.pro
+          sed -i '' 's|LIBS+= -L/opt/homebrew/opt/libomp/lib|LIBS+= -L/opt/homebrew/opt/libomp/lib -L/usr/local/opt/libomp/lib|g' TRSE.pro
+          sed -i '' 's|QMAKE_CXXFLAGS+= -I/opt/homebrew/opt/libomp/include|QMAKE_CXXFLAGS+= -I/opt/homebrew/opt/libomp/include -I/usr/local/opt/libomp/include|g' TRSE.pro
+          
+      - run: qmake TRSE.pro
+      - run: make -j 4
+
+      - name: Package application
+        run: cd Publish/publish_mac && ./publish_mac.sh nightly
       - uses: softprops/action-gh-release@v2
         with:
           name: nightly
