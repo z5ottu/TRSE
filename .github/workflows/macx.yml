@@ -40,8 +40,19 @@ jobs:
 
       - name: Set OpenMP environment variables
         run: |
-          echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
+          # Check which architecture we're on and set the correct paths
+          if [ -d "/opt/homebrew/opt/libomp" ]; then
+            # ARM64 Mac (Apple Silicon)
+            echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
+          elif [ -d "/usr/local/opt/libomp" ]; then
+            # x86_64 Mac (Intel)
+            echo "LDFLAGS=-L/usr/local/opt/libomp/lib" >> $GITHUB_ENV
+            echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
+          else
+            echo "Error: libomp not found in expected locations"
+            exit 1
+          fi
 
       - run: qmake TRSE.pro
       - run: make -j 4
