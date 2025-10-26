@@ -38,24 +38,27 @@ jobs:
           arch: 'clang_64'      
       - run: brew install libomp
 
-      - name: Set OpenMP environment variables
-        run: |
+      - run: |
           # Check which architecture we're on and set the correct paths
           if [ -d "/opt/homebrew/opt/libomp" ]; then
             # ARM64 Mac (Apple Silicon)
             echo "LDFLAGS=-L/opt/homebrew/opt/libomp/lib" >> $GITHUB_ENV
             echo "CPPFLAGS=-I/opt/homebrew/opt/libomp/include" >> $GITHUB_ENV
+            export LDFLAGS=-L/opt/homebrew/opt/libomp/lib
+            export CPPFLAGS=-I/opt/homebrew/opt/libomp/include
           elif [ -d "/usr/local/opt/libomp" ]; then
             # x86_64 Mac (Intel)
             echo "LDFLAGS=-L/usr/local/opt/libomp/lib" >> $GITHUB_ENV
             echo "CPPFLAGS=-I/usr/local/opt/libomp/include" >> $GITHUB_ENV
+            export LDFLAGS=-L/usr/local/opt/libomp/lib
+            export CPPFLAGS=-I/usr/local/opt/libomp/include
           else
             echo "Error: libomp not found in expected locations"
             exit 1
           fi
-
-      - run: qmake TRSE.pro
-      - run: make -j 4
+          export
+          qmake TRSE.pro
+          make -j 4
 
       - name: Codesign executable
         env: 
