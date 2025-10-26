@@ -1,9 +1,6 @@
 name: macx
 
 on:
-  push:
-    tags:
-      - 'nightly'
   workflow_dispatch:
   
 jobs:
@@ -59,11 +56,24 @@ jobs:
 
       - name: Package application
         run: cd Publish/publish_mac && ./publish_mac.sh nightly
+      
+      - name: Create release tag with timestamp
+        id: create_tag
+        run: |
+          TIMESTAMP=$(date +%s)
+          TAG_NAME="manual-${TIMESTAMP}"
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "${TAG_NAME}" -m "Manual build ${{ steps.version.outputs.TRSE_VERSION }} at ${TIMESTAMP}"
+          git push origin "${TAG_NAME}"
+      
       - uses: softprops/action-gh-release@v2
         with:
-          name: nightly
-          body: TRSE ${{ steps.version.outputs.TRSE_VERSION }} <br/> The latest automated nightly build of TRSE which succeeded. This is the recommended version to use.
+          tag_name: ${{ steps.create_tag.outputs.TAG_NAME }}
+          name: Manual Build ${{ steps.version.outputs.TRSE_VERSION }}
+          body: TRSE ${{ steps.version.outputs.TRSE_VERSION }} <br/> Manual build created at ${{ steps.create_tag.outputs.TAG_NAME }}
           files: Publish/publish_mac/trse_osx.tar.gz
           prerelease: false
           make_latest: true
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
